@@ -1,0 +1,29 @@
+- type: entity
+  id: ActionAntagMindSwap
+  parent: BaseEntityTargetAction
+  components:
+  - type: EntityTargetAction
+    name: Mind Swap
+    description: Swap consciousness with a living target in your sight temporarily. Your original body is vulnerable.
+    icon: /Textures/Interface/Actions/mind_swap.rsi/icon.png # Replace with actual path
+    useDelay: 15
+    event: !type:AntagMindSwapActionEvent
+    
+
+- type: worldAction
+  id: ActionHexPlayer
+  name: Apply Hex
+  description: Marks a single targeted player with a Hex.
+  icon: /Textures/Interface/Actions/bleed.rsi/bleed.png # Replace with a fitting icon
+  event: !type:CovenHexPlayerActionEvent
+  itemIconStyle: BigAction
+  checkCanInteract: true
+  
+- type: instantAction
+  id: ActionTriggerHex
+  name: Ignite Hexes
+  description: After a 5-minute delay, ignites and severely damages all marked players.
+  icon: /Textures/Interface/Actions/fire.rsi/fire.png # Replace with a fitting icon
+  event: !type:CovenTriggerHexActionEvent
+  itemIconStyle: BigAction
+  checkCanInteract: true
