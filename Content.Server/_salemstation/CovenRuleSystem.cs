@@ -35,14 +35,14 @@ public sealed class CovenRuleSystem : GameRuleSystem<CovenRuleComponent>
     {
         base.Initialize();
 
-        SubscribeLocalEvent<CovenRuleComponent, GameRuleStartedEvent>(OnRuleStarted);
-        SubscribeLocalEvent<CovenRuleComponent, GameRuleEndedEvent>(OnRuleEnded);
+        //SubscribeLocalEvent<CovenRuleComponent, GameRuleStartedEvent>(OnRuleStarted);
+        //SubscribeLocalEvent<CovenRuleComponent, GameRuleEndedEvent>(OnRuleEnded);
 
         // Listen for entity death
         SubscribeLocalEvent<MobStateChangedEvent>(OnMobStateChanged);
     }
 
-    private void OnRuleStarted(EntityUid uid, CovenRuleComponent component, ref GameRuleStartedEvent args)
+    protected override void Started(EntityUid uid, CovenRuleComponent component, GameRuleComponent gameRule, GameRuleStartedEvent args)
     {
         // 1. Gather all candidates who want to play ANY role in this faction
         // We pool them together so players who selected multiple roles aren't left out
@@ -87,9 +87,9 @@ public sealed class CovenRuleSystem : GameRuleSystem<CovenRuleComponent>
             }
         }
     }
-
-    private void OnRuleEnded(EntityUid uid, CovenRuleComponent component, ref GameRuleEndedEvent args)
+    protected override void Ended(EntityUid uid, CovenRuleComponent component, GameRuleComponent gameRule, GameRuleEndedEvent args)
     {
+        
         // Clean up or log round-end stats here
         component.ActiveAntags.Clear();
     }

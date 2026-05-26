@@ -26,7 +26,6 @@ namespace Content.Server.CovenLeaderMindSwap
         public override void Initialize()
         {
             base.Initialize();
-            SubscribeLocalEvent<AntagMindSwapActionEvent>(OnMindSwapAction);
 
             // Listen for the mind swap action click
             SubscribeLocalEvent<AntagMindSwapActionEvent>(OnMindSwapAction);
