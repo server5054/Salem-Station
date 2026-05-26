@@ -1,4 +1,5 @@
-- type: gameRule
+- type: entity
+  parent: BaseGameRule
   id: MyFactionAntag
   config:
     type: CovenRule

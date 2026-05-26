@@ -1,6 +1,6 @@
 - type: entity
   id: ActionAntagMindSwap
-  parent: BaseEntityTargetAction
+  parent: BaseAction
   components:
   - type: EntityTargetAction
     name: Mind Swap
@@ -10,8 +10,9 @@
     event: !type:AntagMindSwapActionEvent
     
 
-- type: worldAction
+- type: entity #worldAction
   id: ActionHexPlayer
+  parent: BaseAction
   name: Apply Hex
   description: Marks a single targeted player with a Hex.
   icon: /Textures/Interface/Actions/bleed.rsi/bleed.png # Replace with a fitting icon
@@ -19,8 +20,9 @@
   itemIconStyle: BigAction
   checkCanInteract: true
   
-- type: instantAction
+- type: entity
   id: ActionTriggerHex
+  parent: BaseAction
   name: Ignite Hexes
   description: After a 5-minute delay, ignites and severely damages all marked players.
   icon: /Textures/Interface/Actions/fire.rsi/fire.png # Replace with a fitting icon
