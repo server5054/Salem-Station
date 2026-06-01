@@ -19,5 +19,6 @@ namespace Content.Shared.CovenHexMaster;
 [RegisterComponent, NetworkedComponent]
 public sealed partial class CovenHexMasterComponent : Component
 {
-
+    [DataField] public EntityUid? ActionHexPlayerEntity;
+    [DataField] public EntityUid? ActionTriggerHexEntity;
 }
