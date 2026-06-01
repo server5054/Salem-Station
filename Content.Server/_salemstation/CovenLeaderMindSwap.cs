@@ -38,6 +38,7 @@ namespace Content.Server.CovenLeaderMindSwap
         {
             // uid here is the player's physical body
             _actionsSystem.AddAction(uid, MindSwapActionId);
+            Dirty(uid, component);
         }
 
         public override void Update(float frameTime)

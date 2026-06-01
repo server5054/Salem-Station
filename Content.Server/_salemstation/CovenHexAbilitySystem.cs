@@ -1,23 +1,20 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Content.Shared.Actions;
-using Content.Shared.Damage;
-using Content.Shared.Damage.Prototypes;
-using Content.Server.Atmos.Components;
 using Content.Server.Atmos.EntitySystems;
-using Robust.Shared.Timing;
-using Robust.Shared.Prototypes;
-using Content.Shared.CovenHexed;
+using Content.Shared.Actions;
 using Content.Shared.Atmos.Components;
 using Content.Shared.CovenHexAbilityEvents;
-using Content.Shared.Actions;
-using Content.Shared.Roles;
-using Content.Server.Roles;
+using Content.Shared.CovenHexed;
+using Content.Shared.CovenHexMarkingWeapon;
 using Content.Shared.CovenHexMaster;
 using Content.Shared.CovenMember;
+using Content.Shared.Damage;
+using Content.Shared.Damage.Prototypes;
+using Content.Shared.Database;
+using Content.Shared.Hands.Components;
+using Content.Shared.Hands.EntitySystems;
+using Content.Shared.Weapons.Melee.Events;
+using Robust.Shared.Player;
+using Robust.Shared.Prototypes;
+using Robust.Shared.Timing;
 
 namespace Content.Server.CovenHexAbilitySystem;
 
@@ -29,9 +26,12 @@ public sealed class CovenHexAbilitySystem : EntitySystem
     [Dependency] private readonly IGameTiming _gameTiming = default!;
     [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
     [Dependency] private readonly Content.Server.Explosion.EntitySystems.ExplosionSystem _explosion = default!;
+    [Dependency] private readonly SharedHandsSystem _hands = default!;
+    [Dependency] private readonly EntityManager _entityManager = default!;
 
     private const string ActionHexPlayer = "ActionHexPlayer";
     private const string ActionTriggerHex = "ActionTriggerHex";
+
 
     public override void Initialize()
     {
@@ -41,88 +41,137 @@ public sealed class CovenHexAbilitySystem : EntitySystem
         SubscribeLocalEvent<CovenHexPlayerActionEvent>(OnMarkPlayer);
         SubscribeLocalEvent<CovenTriggerHexActionEvent>(OnMarkIgnite);
         SubscribeLocalEvent<CovenHexMasterComponent, ComponentInit>(OnCovenHexMasterInit);
+
+        SubscribeLocalEvent<HexMarkingWeaponComponent, MeleeHitEvent>(OnMeleeHit);
     }
 
 
-    private void OnCovenHexMasterInit(EntityUid uid , CovenHexMasterComponent component, ComponentInit args)
+    private void OnCovenHexMasterInit(EntityUid uid, CovenHexMasterComponent component, ref ComponentInit args)
     {
-        _actions.AddAction(uid, ActionHexPlayer);
-        _actions.AddAction(uid, ActionTriggerHex);
+        // Safety check: Don't double-grant actions if they already exist
+        if (component.ActionHexPlayerEntity != null || component.ActionTriggerHexEntity != null)
+            return;
+
+        _actions.AddAction(uid, ref component.ActionHexPlayerEntity, ActionHexPlayer);
+        _actions.AddAction(uid, ref component.ActionTriggerHexEntity, ActionTriggerHex);
+        Dirty(uid, component);
     }
     private void OnMarkPlayer(CovenHexPlayerActionEvent args)
     {
         if (args.Handled)
             return;
-        var target = args.Target.EntityId;
+        var caster = args.Performer;
 
-        // Ensure we actually targeted a player/valid entity, not empty space
-        if (!EntityManager.EntityExists(target))
+        // Ensure they have active hands to hold the curse
+        if (!_hands.TryGetEmptyHand(caster, out var emptyHand))
             return;
-        // Don't mark someone who is already marked
-        if (HasComp<CovenHexedComponent>(target))
+        // Spawn our bound hex item directly into existence
+        var hexWeapon = Spawn("WeaponHexMarker", Transform(caster).Coordinates);
+
+        // Force it directly into their open active hand
+        if (_hands.TryPickup(caster, hexWeapon, emptyHand, checkActionBlocker: false, animateUser: true))
+        {
+            args.Handled = true;
+        }
+        else
+        {
+            // Fallback safety deletion if pickup somehow fails
+            QueueDel(hexWeapon);
+        }
+
+
+    }
+
+    private void OnMeleeHit(EntityUid weaponUid, HexMarkingWeaponComponent component, MeleeHitEvent args)
+    {
+        // We only want to process the strike if it connected with valid targets
+        if (args.HitEntities.Count == 0)
             return;
 
-        EnsureComp<CovenHexedComponent>(target);
+        bool markedAnyone = false;
 
+        foreach (var victim in args.HitEntities)
+        {
+            // Skip hitting yourself, walls, or non-living items
+            if (victim == args.User || !HasComp<DamageableComponent>(victim))
+                continue;
 
+            // Apply your custom coven marker component permanently
+            EnsureComp<CovenHexedComponent>(victim);
+            markedAnyone = true;
+        }
+
+        // If we successfully hit and marked a valid player, consume the curse weapon
+        if (markedAnyone)
+        {
+            QueueDel(weaponUid);
+        }
     }
 
     private void OnMarkIgnite(CovenTriggerHexActionEvent args)
     {
         if (args.Handled)
             return;
-        int delayInMilliseconds = 300000;
-        //var delay = TimeSpan.FromSeconds(300);
 
-        var performer = args.Performer;
+        var caster = args.Performer;
+        var activatedAny = false;
 
-        Timer.Spawn(delayInMilliseconds, () => IgniteHexes(performer));
+        // Find all victims currently marked, but whose timers haven't started yet
+        var query = EntityQueryEnumerator<CovenHexedComponent>();
+        while (query.MoveNext(out var victimUid, out var markComp))
+        {
+            if (markComp.TimerStarted)
+                continue;
+
+            // Start the 5-minute clock right now
+            markComp.Caster = caster;
+            markComp.DetonationTime = _gameTiming.CurTime + TimeSpan.FromMinutes(2);
+            markComp.TimerStarted = true;
+
+            activatedAny = true;
+        }
+        if (!activatedAny)
+            return; // Don't trigger action cooldown if nobody was marked
+
+        // Sound effect for the Caster confirming the ritual has begun
 
         args.Handled = true;
+
     }
 
-    private void IgniteHexes(EntityUid performer)
+    public override void Update(float frameTime)
     {
+        base.Update(frameTime);
 
-        var damageSpec = new DamageSpecifier();
-        if (_prototypeManager.TryIndex<DamageTypePrototype>("Heat", out var heatType))
+        // Get the current persistent server time
+        var currentTime = _gameTiming.CurTime;
+
+        var query = EntityQueryEnumerator<CovenHexedComponent, DamageableComponent>();
+        while (query.MoveNext(out var victimUid, out var markComp, out var damageableComp))
         {
-            damageSpec.DamageDict.Add(heatType.ID, 100);
-        }
 
-        // Find every entity across the map that has our marker component
-        var query = EntityQueryEnumerator<CovenHexedComponent, FlammableComponent, DamageableComponent>();
-        while (query.MoveNext(out var uid, out _, out var flammable, out _))
-        {
-            if (!TryComp<CovenMemberComponent>(performer, out var hexComp) || !hexComp.Has_Necro)
-            {
-                return;
-            }
+            // IGNORE if the detonation ability hasn't been pressed yet!
+            if (!markComp.TimerStarted)
+                continue;
 
-            else
-            {
-                // Parameters: (epicenter, explosionPrototypeId, totalIntensity, slope, maxRadius)
-                // "Default" is the standard explosion type. Adjust numbers for flavor/balance!
-                _explosion.QueueExplosion(
-                    uid,
-                    "Default",
-                    totalIntensity: 30,
-                    slope: 5,
-                    maxTileIntensity: 10,
-                    user: performer
-                );
-            }
-            // 1. Ignite the player
-            _flammable.AdjustFireStacks(uid, 5, flammable); // Adds fire intensity
-            _flammable.Ignite(uid, uid);
+            // If the 5 minutes haven't fully elapsed yet, skip them for this tick
+            if (currentTime < markComp.DetonationTime)
+                continue;
 
-            // 2. Deal 100 Heat Damage instantly
-            _damageable.TryChangeDamage(uid, damageSpec, ignoreResistances: true);
+            // --- THE FUSE HAS EXPIRED! DETONATE! ---
 
-            // 3. Clean up the marker component so it doesn't happen again
-            RemCompDeferred<CovenHexedComponent>(uid);
+            DamageSpecifier damage = new();
+            damage.DamageDict.Add("Heat", 100);
+
+            // Apply the damage payload, attributing the source back to the original Hex Master
+            _damageable.TryChangeDamage(victimUid, damage, ignoreResistances: true, origin: markComp.Caster);
+
+
+            // Safely strip the component so they don't get double-hit on the next tick
+            RemCompDeferred<CovenHexedComponent>(victimUid);
         }
     }
+
 }
 
 
