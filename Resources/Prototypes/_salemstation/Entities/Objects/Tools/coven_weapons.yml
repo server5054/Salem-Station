@@ -6,7 +6,7 @@
   components:
   - type: Sprite
     netsync: false
-    texture: /Textures/Interface/Actions/bleed.rsi/bleed.png
+    texture: /Textures/Objects/Tools/screwdriver.rsi/screwdriver.png
   - type: MeleeWeapon
     damage:
       types:
@@ -23,11 +23,11 @@
   components:
   - type: Sprite
     netsync: false
-    texture: /Textures/Interface/Actions/bleed.rsi/bleed.png
+    texture: /Textures/Objects/Tools/screwdriver.rsi/screwdriver.png
   - type: MeleeWeapon
     damage:
       types:
         Cold: 0 # Deals no physical damage, pure utility
     bluntStun: false
-  - type: HexMarkingWeapon #MindSwapingWeapon
+  - type: CovenMindSwappingWeapon #MindSwapingWeapon
   

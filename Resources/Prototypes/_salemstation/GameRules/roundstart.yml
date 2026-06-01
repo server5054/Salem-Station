@@ -1,6 +1,6 @@
 - type: entity
   parent: BaseGameRule
-  id: MyFactionAntag
+  id: Coven
   config:
     type: CovenRule
     roles:

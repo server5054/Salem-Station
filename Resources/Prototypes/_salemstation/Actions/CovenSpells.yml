@@ -5,7 +5,7 @@
   - type: EntityTargetAction
     name: Mind Swap
     description: Swap consciousness with a living target in your sight temporarily. Your original body is vulnerable.
-    icon: /Textures/Interface/Actions/mind_swap.rsi/icon.png # Replace with actual path
+    icon: /Textures/Interface/Actions/eyeopen.png # Replace with actual path
     useDelay: 15
     event: !type:AntagMindSwapActionEvent
     checkCanInteract: false
@@ -20,7 +20,7 @@
   components:
   - type: Action
   - type: Sprite
-    sprite: Interface/Actions/bleed.rsi
+    sprite: /Textures/Interface/Actions/eyeopen.png
     state: bleed
   - type: InstantAction
     event: !type:CovenHexPlayerActionEvent
@@ -34,7 +34,7 @@
   components:
   - type: Action
   - type: Sprite
-    sprite: Interface/Actions/fire.rsi
+    sprite: /Textures/Interface/Actions/eyeopen.png
     state: fire
   - type: InstantAction
     event: !type:CovenTriggerHexActionEvent
