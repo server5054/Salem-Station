@@ -1,22 +1,23 @@
+using Content.Server.Antag;
+using Content.Server.Antag.Components;
+using Content.Server.CovenRule;
+using Content.Server.GameTicking;
+using Content.Server.GameTicking.Rules;
+using Content.Server.Roles;
+using Content.Shared.Chat;
+using Content.Shared.CovenMember;
+using Content.Shared.GameTicking.Components;
+using Content.Shared.Mind;
+using Content.Shared.Mobs;
+using Content.Shared.Mobs.Components;
+using Content.Shared.Mobs.Systems;
+using Content.Shared.Roles;
+using Robust.Shared.Player;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Content.Server.GameTicking.Rules;
-using Content.Server.Antag.Components;
-using Content.Server.Roles;
-using Content.Shared.Roles;
-using Content.Server.Antag;
-using Content.Shared.GameTicking.Components;
-using Content.Server.CovenRule;
-using Content.Shared.Mobs.Components;
-using Content.Shared.Mobs;
-using Content.Server.GameTicking;
-using Content.Shared.CovenMember;
-using Content.Shared.Mind;
-using Robust.Shared.Player;
-using Content.Shared.Mobs.Systems;
 
 namespace Content.Server.CovenInGameRules;
 
@@ -28,6 +29,7 @@ public sealed class CovenRuleSystem : GameRuleSystem<CovenRuleComponent>
     [Dependency] private readonly GameTicker _gameTicker = default!;
     [Dependency] private readonly MobStateSystem _mobState = default!;
     [Dependency] private readonly Content.Server.Chat.Systems.ChatSystem _chatSystem = default!;
+    [Dependency] private readonly Content.Server.Chat.Managers.IChatManager _chatManager = default!;
 
 
 
@@ -85,6 +87,8 @@ public sealed class CovenRuleSystem : GameRuleSystem<CovenRuleComponent>
                 component.ActiveAntags.Add(mob);
                 EnsureComp<CovenMemberComponent>(mob);
             }
+
+            SendCovenBriefing(component);
         }
     }
     protected override void Ended(EntityUid uid, CovenRuleComponent component, GameRuleComponent gameRule, GameRuleEndedEvent args)
@@ -109,6 +113,37 @@ public sealed class CovenRuleSystem : GameRuleSystem<CovenRuleComponent>
                 continue;
 
             CheckWinCondition(uid, rule);
+        }
+    }
+
+    private void SendCovenBriefing(CovenRuleComponent component)
+    {
+        // Build your faction's secret message text
+        // Using color tags makes it pop out visually in the chat box!
+        var message = "[color=purple][bold]You are part of the Coven!:[/bold]\n" +
+                      "Your circle sent you to wipe out this station's crew with deception and witchcraft.\n" +
+                      "Avenge your fallen brothers and sisters![/color]";
+
+        foreach (var mob in component.ActiveAntags)
+        {
+            // We need to find the network/player session currently controlling this mob
+            if (!TryComp<ActorComponent>(mob, out var actor))
+                continue;
+
+            var session = actor.PlayerSession;
+
+            // Dispatch a local chat message strictly visible to this single player
+            _chatManager.ChatMessageToOne(
+                ChatChannel.Server,              // Internal server log channel
+                message,                         // The briefing text
+                string.Empty,                    // Plain text wrapped formatting (leave empty)
+                EntityUid.Invalid,               // No physical "speaker" entity in the room
+                false,                           // Do not show a floating chat bubble above their head
+                session.Channel                          // The specific recipient target
+            );
+
+            // OPTIONAL: If you want to play a spooky/alert sound effect just for them:
+            // _audioSystem.PlayToSession(session, "/Audio/Ambience/Antag/traitor_start.ogg");
         }
     }
 

@@ -1,14 +1,18 @@
-using Content.Shared.Mobs.Systems;
+using Content.Server.Antag;
 using Content.Server.Mind;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
 using Content.Server.MindSwapTracker;
 using Content.Shared.Actions;
-using Content.Shared.Mobs.Components;
-using Content.Server.Antag;
 using Content.Shared.CovenLeader;
 using Content.Shared.CovenMember;
+using Content.Shared.CovenMindSwappingWeapon;
+using Content.Shared.Hands.Components;
+using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Mindshield.Components;
+using Content.Shared.Mobs.Components;
+using Content.Shared.Mobs.Systems;
+using Content.Shared.Weapons.Melee.Events;
+using Robust.Shared.GameObjects;
+using Robust.Shared.IoC;
 
 namespace Content.Server.CovenLeaderMindSwap
 {
@@ -18,6 +22,7 @@ namespace Content.Server.CovenLeaderMindSwap
         [Dependency] private readonly MindSystem _mindSystem = default!;
         [Dependency] private readonly MobStateSystem _mobState = default!;
         [Dependency] private readonly SharedActionsSystem _actionsSystem = default!; // Added to manage actions
+        [Dependency] private readonly SharedHandsSystem _hands = default!;
 
         private const string MindSwapActionId = "ActionAntagMindSwap";
 
@@ -32,6 +37,8 @@ namespace Content.Server.CovenLeaderMindSwap
 
             // Listen for when a player gets assigned an antagonist role
             SubscribeLocalEvent<CovenLeaderComponent, ComponentInit>(OnCovenLeaderInit);
+
+            SubscribeLocalEvent<CovenMindSwappingWeaponComponent, MeleeHitEvent>(OnMeleeHit);
         }
 
         private void OnCovenLeaderInit(EntityUid uid, CovenLeaderComponent component, ComponentInit args)
@@ -61,41 +68,67 @@ namespace Content.Server.CovenLeaderMindSwap
             }
         }
 
-        private void OnMindSwapAction(AntagMindSwapActionEvent args)
+        private void OnMeleeHit(EntityUid uid, CovenMindSwappingWeaponComponent component, ref MeleeHitEvent args)
         {
-            var performer = args.Performer;
-            var target = args.Target;
-            float duration = 30f; // 30 seconds duration
+            // The person swinging the weapon
+            var attacker = args.User;
 
-            if (!Exists(target) || !_mobState.IsAlive(target))
-                return;
-
-            // Check if the target is mindshielded
-            if (HasComp<MindShieldComponent>(target))
+            // Melee swings can hit multiple entities at once, so loop through them
+            foreach (var target in args.HitEntities)
             {
-                // Read the performer's coven component
-                if (!TryComp<CovenMemberComponent>(performer, out var covenComp) || !covenComp.Has_Necro)
+                // 1. Core Validation: Ensure target exists, is alive, and isn't the attacker themselves
+                if (target == attacker || !Exists(target) || !_mobState.IsAlive(target))
+                    continue;
+                // 2. Mindshield Check: Read the attacker's coven status to see if they can pierce shields
+                if (HasComp<MindShieldComponent>(target))
                 {
-                    // If they aren't a coven member, or they haven't been granted the true boolean flag yet, block it!
-                    return;
+                    if (!TryComp<CovenMemberComponent>(attacker, out var covenComp) || !covenComp.Has_Necro)
+                    {
+                        continue; // Blocked by mindshield, skip this target
+                    }
+                }
+
+                // 3. Execution Phase
+                if (ExecuteSwap(attacker, target))
+                {
+                    // Attach components to track the duration countdown
+                    var perfSwap = AddComp<MindSwapTrackerComponent>(attacker);
+                    perfSwap.Partner = target;
+                    perfSwap.TimeRemaining = component.SwapDuration;
+                    perfSwap.IsMaster = true;
+
+                    var targetSwap = AddComp<MindSwapTrackerComponent>(target);
+                    targetSwap.Partner = attacker;
+                    targetSwap.TimeRemaining = component.SwapDuration;
+                    targetSwap.IsMaster = false;
+
+                    // We successfully swapped minds with the first valid entity we struck, so stop processing
+                    break;
                 }
             }
+        }
 
-            // Execute the initial swap logic
-            if (ExecuteSwap(performer, target))
+        private void OnMindSwapAction(AntagMindSwapActionEvent args)
+        {
+            if (args.Handled)
+                return;
+            var caster = args.Performer;
+
+            // Ensure they have active hands to hold the curse
+            if (!_hands.TryGetEmptyHand(caster, out var emptyHand))
+                return;
+            // Spawn our bound hex item directly into existence
+            var mindswapWeapon = Spawn("WeaponMindSwapper", Transform(caster).Coordinates);
+
+            // Force it directly into their open active hand
+            if (_hands.TryPickup(caster, mindswapWeapon, emptyHand, checkActionBlocker: false, animateUser: true))
             {
-                // Attach components to track the temporary state
-                var perfSwap = AddComp<MindSwapTrackerComponent>(performer);
-                perfSwap.Partner = target;
-                perfSwap.TimeRemaining = duration;
-                perfSwap.IsMaster = true; // This entity will drive the countdown
-
-                var targetSwap = AddComp<MindSwapTrackerComponent>(target);
-                targetSwap.Partner = performer;
-                targetSwap.TimeRemaining = duration;
-                targetSwap.IsMaster = false;
-
                 args.Handled = true;
+            }
+            else
+            {
+                // Fallback safety deletion if pickup somehow fails
+                QueueDel(mindswapWeapon);
             }
         }
 
