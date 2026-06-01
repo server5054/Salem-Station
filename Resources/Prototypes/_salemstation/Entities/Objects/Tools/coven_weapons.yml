@@ -1,0 +1,33 @@
+- type: entity
+  id: WeaponHexMarker
+  parent: BaseItem
+  name: Hexing Touch
+  description: An ethereal curse bound to your hand. Strike a victim to mark them.
+  components:
+  - type: Sprite
+    netsync: false
+    texture: /Textures/Interface/Actions/bleed.rsi/bleed.png
+  - type: MeleeWeapon
+    damage:
+      types:
+        Cold: 0 # Deals no physical damage, pure utility
+    bluntStun: false
+  - type: HexMarkingWeapon # Our system listens for this
+  
+  
+- type: entity
+  id: WeaponMindSwapper
+  parent: BaseItem
+  name: Hexing Touch
+  description: An ethereal curse bound to your hand. Strike a victim to swap minds.
+  components:
+  - type: Sprite
+    netsync: false
+    texture: /Textures/Interface/Actions/bleed.rsi/bleed.png
+  - type: MeleeWeapon
+    damage:
+      types:
+        Cold: 0 # Deals no physical damage, pure utility
+    bluntStun: false
+  - type: HexMarkingWeapon #MindSwapingWeapon
+  

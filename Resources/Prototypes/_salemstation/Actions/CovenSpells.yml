@@ -8,6 +8,8 @@
     icon: /Textures/Interface/Actions/mind_swap.rsi/icon.png # Replace with actual path
     useDelay: 15
     event: !type:AntagMindSwapActionEvent
+    checkCanInteract: false
+    range: 4
     
 
 - type: entity #worldAction
@@ -15,17 +17,25 @@
   parent: BaseAction
   name: Apply Hex
   description: Marks a single targeted player with a Hex.
-  icon: /Textures/Interface/Actions/bleed.rsi/bleed.png # Replace with a fitting icon
-  event: !type:CovenHexPlayerActionEvent
-  itemIconStyle: BigAction
-  checkCanInteract: true
+  components:
+  - type: Action
+  - type: Sprite
+    sprite: Interface/Actions/bleed.rsi
+    state: bleed
+  - type: InstantAction
+    event: !type:CovenHexPlayerActionEvent
+    checkCanInteract: false
   
 - type: entity
   id: ActionTriggerHex
   parent: BaseAction
   name: Ignite Hexes
   description: After a 5-minute delay, ignites and severely damages all marked players.
-  icon: /Textures/Interface/Actions/fire.rsi/fire.png # Replace with a fitting icon
-  event: !type:CovenTriggerHexActionEvent
-  itemIconStyle: BigAction
-  checkCanInteract: true
+  components:
+  - type: Action
+  - type: Sprite
+    sprite: Interface/Actions/fire.rsi
+    state: fire
+  - type: InstantAction
+    event: !type:CovenTriggerHexActionEvent
+    checkCanInteract: false
