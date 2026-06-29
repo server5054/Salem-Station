@@ -1,0 +1,27 @@
+- type: entity
+  id: TribunalPodium
+  parent: BaseStructure
+  name: tribunal execution podium
+  description: A daunting podium where the station decides the fate of the accused.
+  components:
+  - type: Sprite
+    sprite: Structures/Furniture/Tables/generic.rsi # Replace with your custom sprite
+    state: podium
+  - type: Strap
+    position: Down # Keeps them locked in place
+    buckleType: Handcuffed
+  - type: TribunalPodium
+  - type: InteractionOutline
+  - type: ActivatableUI
+    key: enum.Content.Shared.TribunalUIShared.TribunalUiKey.Key # Or wherever your enum is stored
+    node: finished
+  - type: UserInterface
+    interfaces:
+      enum.Content.Shared.TribunalUIShared.TribunalUiKey.Key:
+        type: TribunalWindow
+  - type: Construction
+    graph: Machine # Tell it to use the master machine graph!
+    node: machine  # This maps it to the final step of the global graph
+  - type: WiresPanel
+  - type: Machine
+    board: TribunalPodiumMachineBoard # Ensures it hooks back to your board

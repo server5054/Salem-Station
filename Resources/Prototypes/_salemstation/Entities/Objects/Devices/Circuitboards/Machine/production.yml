@@ -1,0 +1,10 @@
+- type: entity
+  id: TribunalPodiumMachineBoard
+  name: tribunal execution podium machine board
+  description: A circuit board used to construct a Tribunal Execution Podium.
+  components:
+  - type: Sprite
+    sprite: Objects/Misc/books.rsi
+    state: security # Gives it a red security color tint
+  - type: MachineBoard
+    prototype: TribunalPodium
