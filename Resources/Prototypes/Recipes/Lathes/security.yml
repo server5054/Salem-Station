@@ -109,6 +109,14 @@
 
 ## Recipes
 
+- type: latheRecipe
+  id: TribunalPodiumMachineBoardRecipe
+  result: TribunalPodiumMachineBoard
+  materials:
+    Steel: 30
+  time: 5 # Takes 5 seconds to print
+  
+  
 # Clothing
 - type: latheRecipe
   id: ClothingBackpackElectropack
