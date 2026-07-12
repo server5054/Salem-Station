@@ -1,11 +1,6 @@
 using Robust.Shared.Serialization;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Content.Shared.TribunalUIShared
+namespace Content.Shared._salemstation
 {
     // The unique key to identify this UI
     [Serializable, NetSerializable]
@@ -19,6 +14,7 @@ namespace Content.Shared.TribunalUIShared
     public sealed class TribunalVoteMessage : BoundUserInterfaceMessage
     {
         public readonly bool VoteGuilty;
+
         public TribunalVoteMessage(bool voteGuilty)
         {
             VoteGuilty = voteGuilty;

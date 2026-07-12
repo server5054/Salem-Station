@@ -1,63 +1,55 @@
-using Content.Server.TribunalPodiumDef;
-using Content.Shared.TribunalUIShared;
+using Content.Shared._salemstation;
 using Robust.Server.GameObjects;
-using Robust.Shared.Timing;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Robust.Shared.Timing;
 
-namespace Content.Server.TribunalPodiumSystemBuiDef
+namespace Content.Server._salemstation
 {
-    public sealed partial class TribunalPodiumSystem : EntitySystem
+    // UI half of TribunalPodiumSystem: vote messages in, window state out.
+    // The window itself is opened by the ActivatableUI component on the podium.
+    public sealed partial class TribunalPodiumSystem
     {
         [Dependency] private readonly UserInterfaceSystem _ui = default!;
-        [Dependency] private readonly IGameTiming _timing = default!;
 
         private void InitializeBui()
         {
-            // Subscribe to the event when a player interacts with the UI
-            SubscribeLocalEvent<TribunalPodiumComponent, BoundUIClosedEvent>(OnBuiClosed);
-
+            SubscribeLocalEvent<TribunalPodiumComponent, TribunalVoteMessage>(OnVoteMessage);
+            SubscribeLocalEvent<TribunalPodiumComponent, BoundUIOpenedEvent>(OnBuiOpened);
         }
 
-        // Triggered when a player clicks the podium without an item in hand
-        private void OpenPodiumUi(EntityUid uid, TribunalPodiumComponent component, EntityUid user)
+        // Push current state to a player the moment they open the window.
+        private void OnBuiOpened(EntityUid uid, TribunalPodiumComponent component, BoundUIOpenedEvent args)
         {
-            if (!_ui.HasUi(uid, TribunalUiKey.Key)) return;
-
-            _ui.OpenUi(uid, TribunalUiKey.Key, user);
             UpdateUserInterface(uid, component);
         }
 
-        private void OnBuiClosed(EntityUid uid, TribunalPodiumComponent component, BoundUIClosedEvent args)
+        private void OnVoteMessage(EntityUid uid, TribunalPodiumComponent component, TribunalVoteMessage args)
         {
-            // Left blank intentionally. No cleanup needed when a user closes the window.
-        }
+            if (component.CurrentState != TrialState.Voting)
+                return;
 
+            // One vote per crewmate; voting again changes their choice.
+            component.Votes[args.Actor] = args.VoteGuilty;
+
+            UpdateUserInterface(uid, component);
+        }
 
         private void UpdateUserInterface(EntityUid uid, TribunalPodiumComponent component)
         {
-            int guilty = 0;
-            int innocent = 0;
+            CountVotes(component, out var guilty, out var innocent);
 
-            foreach (var vote in component.Votes.Values)
-            {
-                if (vote) guilty++; else innocent++;
-            }
+            var prisonerName = component.Prisoner is { } prisoner && Exists(prisoner)
+                ? Name(prisoner)
+                : "None";
 
-            var prisonerName = component.Prisoner != null ? Name(component.Prisoner.Value) : "None";
-            var remaining = component.StateEndTime - _timing.CurTime; //Check
+            var remaining = component.StateEndTime - _timing.CurTime;
+            if (component.CurrentState == TrialState.Idle || remaining < TimeSpan.Zero)
+                remaining = TimeSpan.Zero;
 
             var state = new TribunalBoundUserInterfaceState(
                 prisonerName,
                 guilty,
                 innocent,
                 remaining,
-                component.CurrentState.ToString()
-            );
+                component.CurrentState.ToString());
 
             _ui.SetUiState(uid, TribunalUiKey.Key, state);
         }

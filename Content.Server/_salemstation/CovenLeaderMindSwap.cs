@@ -2,6 +2,7 @@ using Content.Server.Antag;
 using Content.Server.Mind;
 using Content.Server.MindSwapTracker;
 using Content.Shared.Actions;
+using Content.Shared.CovenHexAbilityEvents;
 using Content.Shared.CovenLeader;
 using Content.Shared.CovenMember;
 using Content.Shared.CovenMindSwappingWeapon;
@@ -16,7 +17,6 @@ using Robust.Shared.IoC;
 
 namespace Content.Server.CovenLeaderMindSwap
 {
-    public sealed partial class AntagMindSwapActionEvent : EntityTargetActionEvent { }
     public sealed class CovenLeaderMindSwapSystem : EntitySystem
     {
         [Dependency] private readonly MindSystem _mindSystem = default!;

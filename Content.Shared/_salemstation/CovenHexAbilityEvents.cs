@@ -23,3 +23,9 @@ public sealed partial class CovenTriggerHexActionEvent : InstantActionEvent
 
     }
 }
+
+// Lives in Shared (not Server) because the client deserializes it from the
+// ActionAntagMindSwap prototype via !type: — server-only types break client prototype loading.
+public sealed partial class AntagMindSwapActionEvent : EntityTargetActionEvent
+{
+}
