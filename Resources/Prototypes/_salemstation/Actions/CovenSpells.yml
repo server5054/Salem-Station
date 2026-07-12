@@ -20,8 +20,7 @@
   components:
   - type: Action
   - type: Sprite
-    sprite: /Textures/Interface/Actions/eyeopen.png
-    state: bleed
+    texture: /Textures/Interface/Actions/eyeopen.png # plain png needs 'texture:', 'sprite:'+'state:' is for .rsi folders
   - type: InstantAction
     event: !type:CovenHexPlayerActionEvent
     checkCanInteract: false
@@ -34,8 +33,7 @@
   components:
   - type: Action
   - type: Sprite
-    sprite: /Textures/Interface/Actions/eyeopen.png
-    state: fire
+    texture: /Textures/Interface/Actions/eyeopen.png # plain png needs 'texture:', 'sprite:'+'state:' is for .rsi folders
   - type: InstantAction
     event: !type:CovenTriggerHexActionEvent
     checkCanInteract: false

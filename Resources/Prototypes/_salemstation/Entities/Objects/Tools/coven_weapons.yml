@@ -6,7 +6,8 @@
   components:
   - type: Sprite
     netsync: false
-    texture: /Textures/Objects/Tools/screwdriver.rsi/screwdriver.png
+    sprite: Objects/Tools/screwdriver.rsi # reference the RSI state, not the raw png inside the .rsi folder
+    state: screwdriver
   - type: MeleeWeapon
     damage:
       types:
@@ -23,7 +24,8 @@
   components:
   - type: Sprite
     netsync: false
-    texture: /Textures/Objects/Tools/screwdriver.rsi/screwdriver.png
+    sprite: Objects/Tools/screwdriver.rsi # reference the RSI state, not the raw png inside the .rsi folder
+    state: screwdriver
   - type: MeleeWeapon
     damage:
       types:
