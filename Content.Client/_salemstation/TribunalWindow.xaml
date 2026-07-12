@@ -1,17 +1,18 @@
-<controls:DefaultWindow 
+<controls:DefaultWindow
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Robust.Client.UserInterface.CustomControls;assembly=Robust.Client"
     xmlns:ui="clr-namespace:Robust.Client.UserInterface.Controls;assembly=Robust.Client"
-    x:Class="Content.Client.TribunalWindowDef.TribunalWindow"
-    Title="Tribunal Console">
+    x:Class="Content.Client._salemstation.TribunalWindow"
+    Title="Tribunal Console"
+    MinSize="300 160">
 
-    <ui:BoxContainer Orientation="Vertical">
+    <ui:BoxContainer Orientation="Vertical" Margin="4" SeparationOverride="4">
         <ui:Label Name="PrisonerLabel" Text="Accused: None"/>
         <ui:Label Name="PhaseLabel" Text="Phase: Idle"/>
         <ui:Label Name="TimerLabel" Text="Time: 0:00"/>
-        <ui:BoxContainer Orientation="Horizontal">
-            <ui:Button Name="GuiltyButton" Text="Guilty (0)"/>
-            <ui:Button Name="InnocentButton" Text="Innocent (0)"/>
+        <ui:BoxContainer Orientation="Horizontal" SeparationOverride="4">
+            <ui:Button Name="GuiltyButton" Text="Guilty (0)" HorizontalExpand="True"/>
+            <ui:Button Name="InnocentButton" Text="Innocent (0)" HorizontalExpand="True"/>
         </ui:BoxContainer>
     </ui:BoxContainer>
 </controls:DefaultWindow>

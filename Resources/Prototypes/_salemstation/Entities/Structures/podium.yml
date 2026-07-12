@@ -6,22 +6,20 @@
   components:
   - type: Sprite
     sprite: Structures/Furniture/Tables/generic.rsi # Replace with your custom sprite
-    state: podium
+    state: full
   - type: Strap
     position: Down # Keeps them locked in place
-    buckleType: Handcuffed
   - type: TribunalPodium
   - type: InteractionOutline
   - type: ActivatableUI
-    key: enum.Content.Shared.TribunalUIShared.TribunalUiKey.Key # Or wherever your enum is stored
-    node: finished
+    key: enum.Content.Shared._salemstation.TribunalUiKey.Key
   - type: UserInterface
     interfaces:
-      enum.Content.Shared.TribunalUIShared.TribunalUiKey.Key:
-        type: TribunalWindow
+      enum.Content.Shared._salemstation.TribunalUiKey.Key:
+        type: TribunalBoundUserInterface
   - type: Construction
-    graph: Machine # Tell it to use the master machine graph!
-    node: machine  # This maps it to the final step of the global graph
+    graph: Machine
+    node: machine
   - type: WiresPanel
   - type: Machine
-    board: TribunalPodiumMachineBoard # Ensures it hooks back to your board
+    board: TribunalPodiumMachineBoard

@@ -5,6 +5,6 @@
   components:
   - type: Sprite
     sprite: Objects/Misc/books.rsi
-    state: security # Gives it a red security color tint
+    state: icon_law # books.rsi has no 'security' state; icon_law is a valid state that fits the theme
   - type: MachineBoard
     prototype: TribunalPodium
